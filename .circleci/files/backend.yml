@@ -30,11 +30,11 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
-      SecurityGroups:
-        - Ref: InstanceSecurityGroup
       SubnetId: subnet-0b5515760ac49d340
       KeyName: rsucprojkey 
-      ImageId: ami-083654bd07b5da81d 
+      ImageId: ami-083654bd07b5da81d
+      GroupSet: 
+            - Ref: InstanceSecurityGroup 
       Tags:
         - Key: Name
           Value: !Sub udapeople-backend-${ID}
