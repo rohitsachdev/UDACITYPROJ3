@@ -32,6 +32,7 @@ Resources:
       InstanceType: t2.micro
       SecurityGroups:
         - Ref: InstanceSecurityGroup
+      SubnetId: subnet-0b5515760ac49d340
       KeyName: rsucprojkey 
       ImageId: ami-083654bd07b5da81d 
       Tags:
