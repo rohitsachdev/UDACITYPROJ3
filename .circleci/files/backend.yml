@@ -12,6 +12,7 @@ Resources:
     Properties:
       GroupName: !Sub UdaPeople-${ID}
       GroupDescription: Allow port 22, 3030 and 9100.
+      VpcId: vpc-00d91cfd25f3f2978
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -24,7 +25,12 @@ Resources:
         - IpProtocol: tcp
           FromPort: 9100
           ToPort: 9100
-          CidrIp: 0.0.0.0/0      
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
 
   EC2Instance:
     Type: AWS::EC2::Instance
