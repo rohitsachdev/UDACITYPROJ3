@@ -15,16 +15,8 @@ Resources:
       VpcId: vpc-00d91cfd25f3f2978
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 3030
-          ToPort: 3030
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 9100
-          ToPort: 9100
+          FromPort: 0
+          ToPort: 65535
           CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
         - IpProtocol: tcp
