@@ -11,7 +11,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub UdaPeople-${ID}
-      GroupDescription: Allow port 22 and port 3030.
+      GroupDescription: Allow port 22, 3030 and 9100.
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -25,16 +25,26 @@ Resources:
           FromPort: 9100
           ToPort: 9100
           CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+      
 
   EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
-      SubnetId: subnet-0b5515760ac49d340
       KeyName: rsucprojkey 
       ImageId: ami-083654bd07b5da81d
-      GroupSet: 
-            - Ref: InstanceSecurityGroup 
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: Yes
+          DeviceIndex: 0
+          SubnetId: subnet-0b5515760ac49d340
+          GroupSet:
+            - Ref: InstanceSecurityGroup
+ 
       Tags:
         - Key: Name
           Value: !Sub udapeople-backend-${ID}
