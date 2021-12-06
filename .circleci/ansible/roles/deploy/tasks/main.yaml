@@ -40,10 +40,10 @@
   - name: "start pm2"
     become: yes
     shell: | 
-      sudo npm install -g webpack-dev-server
-      sudo npm install
-      sudo npm run build
-      sudo pm2 start npm --name backend -- start
+      npm install -g webpack-dev-server
+      npm install
+      npm run build
+      pm2 start npm --name backend -- start
     args:
       chdir: /home/ubuntu/
     environment:
