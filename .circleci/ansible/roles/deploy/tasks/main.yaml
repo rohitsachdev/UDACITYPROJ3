@@ -11,7 +11,7 @@
   - name: "Copy package.json to EC2"
     become: yes
     copy:
-      src: ../../frontend/package.json
+      src: ../../backend/package.json
       dest: /home/ubuntu/
       owner: ubuntu
       
@@ -37,9 +37,13 @@
       chdir: /home/ubuntu/
     ignore_errors: yes
 
-  - name: "pm2 start npm -- start"
+  - name: "start pm2"
     become: yes
-    command: pm2 start npm -- start
+    shell: | 
+      sudo npm install -g webpack-dev-server
+      sudo npm install
+      sudo npm run build
+      sudo pm2 start npm --name backend -- start
     args:
       chdir: /home/ubuntu/
     environment:
