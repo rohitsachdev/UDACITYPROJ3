@@ -407,8 +407,6 @@ jobs:
               return 1
             fi
 
-      - revert-migrations
-      - destroy-environment
   
   cloudfront-update:
     docker:
