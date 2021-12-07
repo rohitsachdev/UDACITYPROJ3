@@ -28,3 +28,4 @@
       cd /home/ubuntu/backend/dist
       pm2 start npm --name 'udapeople' -- start
       pm2 ls
+      pm2 status
