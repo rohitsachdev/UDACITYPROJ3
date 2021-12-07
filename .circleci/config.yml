@@ -336,7 +336,8 @@ jobs:
           name: Deploy backend
           command: |
             cd backend
-            npm install
+            apk add --update nodejs
+            apk add --update npm
             npm i
             echo ENVIRONMENT=production > ".env"
             echo TYPEORM_CONNECTION=postgres >> ".env"
@@ -385,7 +386,7 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:Name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text)
-            export API_URL="${BACKEND_IP}:3000"
+            export API_URL="${BACKEND_IP}:3030"
             echo "${API_URL}"
             curl "${API_URL}/api/status"
             if curl "${API_URL}/api/status" | grep "ok"
