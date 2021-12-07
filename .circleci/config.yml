@@ -332,15 +332,11 @@ jobs:
           at: ~/project/.circleci
       - restore_cache:
           key: backend-build
-      -run:
-          name: install node modules
-          command: |
-            cd backend
-            npm install
       - run:
           name: Deploy backend
           command: |
             cd backend
+            npm install
             npm i
             echo ENVIRONMENT=production > ".env"
             echo TYPEORM_CONNECTION=postgres >> ".env"
