@@ -353,6 +353,7 @@ jobs:
             npm run prestart:prod
             tar -czvf artefacts.tar.gz dist/
             mv artefacts.tar.gz ../.circleci/ansible/
+            cp package.json ../.circleci/ansible/
             cd ../.circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat ~/project/.circleci/ansible/inventory.txt

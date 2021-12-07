@@ -13,7 +13,27 @@
       owner: ubuntu
       group: ubuntu
       mode: 0777 
-          
+
+  - name: "Copy package json"
+    become: yes
+    copy:
+      src: package.json
+      dest: /home/ubuntu/backend/
+      owner: ubuntu
+      group: ubuntu
+      remote_src: yes
+      mode: 0777
+  
+  - name: "Copy package json"
+    become: yes
+    copy:
+      src: package.json
+      dest: /home/ubuntu/backend/dist/
+      remote_src: yes
+      mode: 0777
+      owner: ubuntu
+      group: ubuntu
+
   - name: "install pm2"
     become: yes
     npm:
