@@ -274,7 +274,7 @@ jobs:
           name: Run Migrations
           command: |
             cd backend
-            npm install 
+            npm install
             sudo npm install pm2 -g
             echo ENVIRONMENT=production > ".env"
             echo TYPEORM_CONNECTION=postgres >> ".env"
@@ -292,11 +292,11 @@ jobs:
             migresult=$(cat migrationres.txt | grep -c "No migrations are pending")
             if [ $migresult > 0 ]; 
             then
-              echo "Migration Failed!"
-              curl -H "Content-Type: text/plain" -H "token: 8d269415-2d07-4d3b-baed-89c97c478150" --request PUT --data "1" https://api.memstash.io/values/migrations-$CIRCLE_WORKFLOW_ID
-            else
               echo "Migrations Successful!"
               curl -H "Content-Type: text/plain" -H "token: 8d269415-2d07-4d3b-baed-89c97c478150" --request PUT --data "0" https://api.memstash.io/values/migrations-$CIRCLE_WORKFLOW_ID
+            else
+              echo "Migration Failed!"
+              curl -H "Content-Type: text/plain" -H "token: 8d269415-2d07-4d3b-baed-89c97c478150" --request PUT --data "1" https://api.memstash.io/values/migrations-$CIRCLE_WORKFLOW_ID
             fi
             export memvalue=$(curl -H "token: 1e288415-cfc8-4a0a-a23c-087eb7cd7678" --request GET https://api.memstash.io/values/migrations-$CIRCLE_WORKFLOW_ID)
             echo "${memvalue}"
@@ -387,7 +387,8 @@ jobs:
             cat inventory.txt
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i ~/project/.circleci/ansible/inventory.txt deploy-backend.yml
-      
+        - revert-migrations
+        - destroy-environment    
   smoke-test:
     docker:
       - image: python:3.7-alpine3.11 
@@ -434,7 +435,8 @@ jobs:
             else
               return 1
             fi
-
+      - revert-migrations
+      - destroy-environment
   
   cloudfront-update:
     docker:
@@ -453,6 +455,8 @@ jobs:
               --stack-name InitialStack \
               --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
               --tags project=udapeople
+      - revert-migrations
+      - destroy-environment
 
   cleanup:
     docker:
@@ -479,6 +483,8 @@ jobs:
               aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
             fi
+      - revert-migrations
+      - destroy-environment
 
 workflows:
   default:
