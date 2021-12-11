@@ -71,12 +71,25 @@ jobs:
       - run:
           name: Back-end build
           command: |
-              cd backend
-              npm install
-              npm run build
+            cd backend
+            npm install
+            npm run build
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
+      - run:
+          name: Compiled code will be retrieved by deploy-backend.yml 
+          command: |
+            mkdir /tmp/workspace/
+            cp ./backend/package.json /tmp/workspace/
+            cd backend/dist
+            tar -zcvf /tmp/workspace/backend.tar.gz ./
+            tar -zcvf ./../../backend.tar.gz ./
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - package.json
+            - backend.tar.gz
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL
           event: fail
@@ -170,7 +183,7 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
-              --tags project=udapeopleRS \
+              --tags Name=backend-${CIRCLE_WORKFLOW_ID:0:7} \
               --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
               --parameter-overrides ID=${CIRCLE_WORKFLOW_ID:0:7} \
               --region us-east-1
@@ -179,7 +192,7 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
-              --tags project=udapeopleRS \
+              --tags Name=frontend-${CIRCLE_WORKFLOW_ID:0:7} \
               --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
               --parameter-overrides ID=${CIRCLE_WORKFLOW_ID:0:7} \
               --region us-east-1
@@ -189,7 +202,7 @@ jobs:
             cd .circleci/ansible
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:Name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text >> inventory.txt
             pwd
             ls -lrt
@@ -221,6 +234,20 @@ jobs:
       - run:
           name: Configure server
           command: |
+            cd backend
+            echo ENVIRONMENT=production > ".env"
+            echo TYPEORM_CONNECTION=postgres >> ".env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
+            echo NODE_ENV=production >> ".env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> ".env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> ".env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ".env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ".env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ".env"
+            cd ..
+            export ANSIBLE_HOST_KEY_CHECKING=False
             cd .circleci/ansible
             ansible-playbook -i ~/project/.circleci/ansible/inventory.txt configure-server.yml
       - destroy-environment
@@ -238,8 +265,6 @@ jobs:
       - run:
           name: Install AWS CLI
           command: |
-            cd backend
-            npm install
             sudo apt-get update && sudo apt-get install -yy less
             sudo apt-get install unzip -y
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -248,16 +273,24 @@ jobs:
       - run:
           name: Run Migrations
           command: |
-            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
-            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
             cd backend
-            npm run migrations > migration_dump.txt
-            cat migration_dump.txt
-            migration_succesful=$(cat migration_dump.txt | grep -c "No migrations are pending")
-            if [ $migration_succesful > 0 ]; 
+            npm install 
+            sudo npm install pm2 -g
+            echo ENVIRONMENT=production > ".env"
+            echo TYPEORM_CONNECTION=postgres >> ".env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
+            echo NODE_ENV=production >> ".env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> ".env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> ".env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ".env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ".env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ".env"
+            npm run migrations > migrationres.txt
+            cat migrationres.txt
+            migresult=$(cat migrationres.txt | grep -c "No migrations are pending")
+            if [ $migresult > 0 ]; 
             then
               echo "Migration Failed!"
               curl -H "Content-Type: text/plain" -H "token: 8d269415-2d07-4d3b-baed-89c97c478150" --request PUT --data "1" https://api.memstash.io/values/migrations-$CIRCLE_WORKFLOW_ID
@@ -265,8 +298,8 @@ jobs:
               echo "Migrations Successful!"
               curl -H "Content-Type: text/plain" -H "token: 8d269415-2d07-4d3b-baed-89c97c478150" --request PUT --data "0" https://api.memstash.io/values/migrations-$CIRCLE_WORKFLOW_ID
             fi
-            export MEMSTASH_VALUE=$(curl -H "token: 1e288415-cfc8-4a0a-a23c-087eb7cd7678" --request GET https://api.memstash.io/values/migrations-$CIRCLE_WORKFLOW_ID)
-            echo "${MEMSTASH_VALUE}"
+            export memvalue=$(curl -H "token: 1e288415-cfc8-4a0a-a23c-087eb7cd7678" --request GET https://api.memstash.io/values/migrations-$CIRCLE_WORKFLOW_ID)
+            echo "${memvalue}"
       - revert-migrations
       - destroy-environment
 
@@ -278,7 +311,6 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            cd frontend
             sudo apt-get update && sudo apt-get install -yy less
             sudo apt-get install unzip -y
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -291,18 +323,24 @@ jobs:
       - run:
           name: Get backend url
           command: |
+            cd frontend
+            npm install
+            touch .env
             export BACKEND_IP=$(aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:Name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text)
             export API_URL="${BACKEND_IP}:3030"
+            echo "API_URL=${API_URL}" >> .env
             echo "${API_URL}"
-            echo "API_URL=$API_URL" > frontend/.env
-            echo "BROWSERSLIST_IGNORE_OLD_DATA=1" >> frontend/.env
+            echo "BROWSERSLIST_IGNORE_OLD_DATA=1" >> .env
       - run:
           name: Deploy frontend objects
           command: |
             cd frontend
+            echo ENVIRONMENT=production >> frontend/.env
+            echo NODE_ENV=production >> frontend/.env
+            npm audit fix --audit-level=critical 
             npm install
             npm update
             npx browserslist@latest --update-db
@@ -330,6 +368,8 @@ jobs:
             pip install awscli
       - attach_workspace:
           at: ~/project/.circleci
+      - attach_workspace:
+          at: /tmp/workspace
       - restore_cache:
           key: backend-build
       - run:
@@ -338,25 +378,14 @@ jobs:
             cd backend
             apk add --update nodejs
             apk add --update npm
-            npm i
-            echo ENVIRONMENT=production > ".env"
-            echo TYPEORM_CONNECTION=postgres >> ".env"
-            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
-            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
-            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
-            echo TYPEORM_HOST=$TYPEORM_HOST >> ".env"
-            echo TYPEORM_PORT=$TYPEORM_PORT >> ".env"
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ".env"
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ".env"
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ".env"
             npm run build
-            npm run prestart:prod
-            tar -czvf artefacts.tar.gz dist/
-            mv artefacts.tar.gz ../.circleci/ansible/
-            cp package.json ../.circleci/ansible/
-            cd ../.circleci/ansible
-            echo "Contents  of the inventory.txt file is -------"
-            cat ~/project/.circleci/ansible/inventory.txt
+            cat .env
+            cd ..
+            tar -C backend -czvf artefacts.tar.gz .
+            mv artefacts.tar.gz .circleci/ansible/
+            cd .circleci/ansible
+            cat inventory.txt
+            export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i ~/project/.circleci/ansible/inventory.txt deploy-backend.yml
       
   smoke-test:
@@ -384,7 +413,7 @@ jobs:
             cd backend
             export BACKEND_IP=$(aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:Name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text)
             export API_URL="${BACKEND_IP}:3030"
             echo "${API_URL}"

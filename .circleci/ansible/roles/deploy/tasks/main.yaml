@@ -2,14 +2,14 @@
   - name: "create app directory"
     become: yes
     file:
-      path: /home/ubuntu/backend
+      path: /home/ubuntu/backendapp
       state: directory
     
   - name: "Copy backend build folder to EC2"
     become: yes
     unarchive:
-      src: artefacts.tar.gz
-      dest: /home/ubuntu/backend/
+      src: /tmp/workspace/backend.tar.gz
+      dest: /home/ubuntu/backendapp/
       owner: ubuntu
       group: ubuntu
       mode: 0777 
@@ -17,35 +17,33 @@
   - name: "Copy package json"
     become: yes
     copy:
-      src: package.json
-      dest: /home/ubuntu/backend/
+      src: /tmp/workspace/package.json
+      dest: /home/ubuntu/backendapp/
       owner: ubuntu
       group: ubuntu
-      remote_src: yes
       mode: 0777
   
-  - name: "Copy package json"
+  - name: "NPM Install"
     become: yes
-    copy:
-      src: package.json
-      dest: /home/ubuntu/backend/dist/
-      remote_src: yes
-      mode: 0777
-      owner: ubuntu
-      group: ubuntu
-
-  - name: "install pm2"
-    become: yes
-    npm:
-      name: pm2
-      global: yes
-      production: yes
-      state: present
+    shell:
+      cmd: npm install --production
+      chdir: /home/ubuntu/backendapp
 
   - name: "start pm2"
     become: yes
     shell: | 
-      cd /home/ubuntu/backend/dist
-      pm2 start npm --name 'udapeople' -- start
+      cd /home/ubuntu/backendapp
+      pm2 start main.js --name 'udapeople'
       pm2 ls
       pm2 status
+    environment:
+      ENVIRONMENT: production
+      TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION') }}"
+      TYPEORM_MIGRATIONS_DIR: "./migrations"
+      TYPEORM_MIGRATIONS: "./migrations/*.js"
+      TYPEORM_ENTITIES: "./modules/domain/**/*.entity.js"
+      TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
+      TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
+      TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
+      TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
+      TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
