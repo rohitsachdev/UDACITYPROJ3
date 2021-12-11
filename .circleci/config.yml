@@ -387,8 +387,8 @@ jobs:
             cat inventory.txt
             export ANSIBLE_HOST_KEY_CHECKING=False
             ansible-playbook -i ~/project/.circleci/ansible/inventory.txt deploy-backend.yml
-        - revert-migrations
-        - destroy-environment    
+      - revert-migrations
+      - destroy-environment    
   smoke-test:
     docker:
       - image: python:3.7-alpine3.11 
