@@ -338,8 +338,8 @@ jobs:
           name: Deploy frontend objects
           command: |
             cd frontend
-            echo ENVIRONMENT=production >> frontend/.env
-            echo NODE_ENV=production >> frontend/.env
+            echo ENVIRONMENT=production >> .env
+            echo NODE_ENV=production >> .env
             npm audit fix --audit-level=critical 
             npm install
             npm update
@@ -378,6 +378,8 @@ jobs:
             cd backend
             apk add --update nodejs
             apk add --update npm
+            npm install typescript --save-dev
+            npm start
             npm run build
             cat .env
             cd ..
