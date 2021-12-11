@@ -379,7 +379,6 @@ jobs:
             apk add --update nodejs
             apk add --update npm
             npm install typescript --save-dev
-            npm start
             npm run build
             cat .env
             cd ..
